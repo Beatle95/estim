@@ -4,6 +4,7 @@
 #include <filesystem>
 #include "Functions.h"
 #include "DirProcessor.h"
+#include "Types.h"
 
 /*
     -p <followed by dest> - sets specified path as searchpath
@@ -20,12 +21,14 @@ namespace {
         "\t-p - specify directory to work with\n"
         "\t-r - recursievly check subdirectories\n"
         "\t-f - process specified file\n"
+        "\t-o<number> - set output level (default is 1)\n"
     };
 
     const char *file_flag {"-f"};
     const char *recursive_flag {"-r"};
     const char *path_flag {"-p"};
     const char *help_flag {"-h"};
+    const char output_flag_char {'o'};
     const char *arguments_error {"Error in argument: "};
 }
 
@@ -33,13 +36,38 @@ int main(int argc, char **argv) {
     std::list<std::string> exts;
     std::string work_path {std::filesystem::current_path().string()};
     bool is_recursive {false};
+    OutputLevel output_level {OutputLevel::ErrorsOnly};
 
     int file_flag_used {0};
     int path_flag_used {0};
 
     for (int i = 1; i < argc; ++i) {
         if (argv[i][0] == '-') {
-            if (strcmp(argv[i], help_flag) == 0) {
+            // output level
+            // argument cannot be 0 length, so this check cannot throw exception
+            if (argv[i][1] == output_flag_char) {
+                if (strlen(argv[i]) != 3) {
+                    std::cout << arguments_error << "wrong -o flag\n";
+                    return 1;
+                }
+
+                int val;
+                bool error {false};
+                try {
+                    val = std::stoi(&argv[i][2]);
+                    if (val < static_cast<int>(OutputLevel::Silent) || val > static_cast<int>(OutputLevel::Max)) {
+                        error = true;
+                    }
+                } catch (const std::invalid_argument& err) {
+                    error = true;
+                }
+                if (error) {
+                    std::cout << "Wrong value for -o flag\n";
+                    return 1;
+                }
+                output_level = static_cast<OutputLevel>(val);
+            }
+            else if (strcmp(argv[i], help_flag) == 0) {
                 std::cout << help_str;
                 return 0;
 
@@ -127,8 +155,10 @@ int main(int argc, char **argv) {
             std::cout << "Result: " << lines << '\n';
             return 0;
         } catch (const std::runtime_error& err) {
-            std::cout << err.what() << '\n';
-            return 1;
+            if (output_level >= OutputLevel::ErrorsOnly) {
+                std::cout << err.what() << '\n';
+                return 1;
+            }
         }
     } else {
         if (!std::filesystem::is_directory(work_path)) {
@@ -138,6 +168,7 @@ int main(int argc, char **argv) {
         DirProcessor dp {work_path};
         dp.set_recursive(is_recursive);
         dp.set_extensions(exts);
+        dp.set_output(output_level);
         const auto result = dp.process();
         std::cout << "Result: " << result << '\n';
         return 0;

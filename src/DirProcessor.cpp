@@ -3,6 +3,7 @@
 #include <stack>
 #include <iostream>
 #include "Functions.h"
+#include "Types.h"
 
 using namespace estim;
 namespace fs = std::filesystem;
@@ -41,7 +42,7 @@ size_t DirProcessor::process() {
 
                 try {
                     const auto cur_result = process_file(entry.path());
-                    if (output_lvl_ >= OutputLevel::Max) {
+                    if (output_lvl_ >= OutputLevel::WithFilesStat) {
                         std::cout << "Found: "
                                   << std::setw(6)
                                   << cur_result
