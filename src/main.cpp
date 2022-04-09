@@ -3,11 +3,14 @@
 #include <list>
 #include <filesystem>
 #include "Functions.h"
+#include "DirProcessor.h"
 
 /*
     -p <followed by dest> - sets specified path as searchpath
     -r                    - recursivly search in subdirectories
 */
+
+using namespace estim;
 
 namespace {
     const char *help_str {
@@ -113,6 +116,7 @@ int main(int argc, char **argv) {
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
 
     if (file_flag_used) {
         try {
@@ -127,8 +131,15 @@ int main(int argc, char **argv) {
             return 1;
         }
     } else {
-        std::filesystem::current_path(work_path);
-        // TODO: process directory
+        if (!std::filesystem::is_directory(work_path)) {
+            std::cout << "Specified path is not directory\n";
+            return 1;
+        }
+        DirProcessor dp {work_path};
+        dp.set_recursive(is_recursive);
+        dp.set_extensions(exts);
+        const auto result = dp.process();
+        std::cout << "Result: " << result << '\n';
         return 0;
     }
 
