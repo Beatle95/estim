@@ -6,11 +6,6 @@
 #include "DirProcessor.h"
 #include "Types.h"
 
-/*
-    -p <followed by dest> - sets specified path as searchpath
-    -r                    - recursivly search in subdirectories
-*/
-
 using namespace estim;
 
 namespace {
