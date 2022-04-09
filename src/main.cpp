@@ -2,6 +2,7 @@
 #include <cstring>
 #include <list>
 #include <filesystem>
+#include "Functions.h"
 
 /*
     -p <followed by dest> - sets specified path as searchpath
@@ -97,21 +98,31 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::cout << "Working directory: \"" << work_path << "\"\n";
-    std::cout << "Selected extensions: ";
-    bool first {true};
-    for (const auto& ext : exts) {
-        if (!first) {
-            std::cout << ", ";
+    if (file_flag_used) {
+        std::cout << "File: \"" << work_path << "\"\n";
+    } else {
+        std::cout << "Directory: \"" << work_path << "\"\n";
+        std::cout << "Extensions: ";
+        bool first {true};
+        for (const auto& ext : exts) {
+            if (!first) {
+                std::cout << ", ";
+            }
+            std::cout << ext;
+            first = false;
         }
-        std::cout << ext;
-        first = false;
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 
     if (file_flag_used) {
-        // TODO: process file
-        return 0;
+        try {
+            const auto lines = process_file(work_path);
+            std::cout << "Result: " << lines << '\n';
+            return 0;
+        } catch (const std::runtime_error& err) {
+            std::cout << err.what() << '\n';
+            return 1;
+        }
     } else {
         std::filesystem::current_path(work_path);
         // TODO: process directory
