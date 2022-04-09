@@ -116,6 +116,9 @@ int main(int argc, char **argv) {
 
     if (file_flag_used) {
         try {
+            if (std::filesystem::is_directory(work_path)) {
+                throw std::runtime_error("Specified file is directory");
+            }
             const auto lines = process_file(work_path);
             std::cout << "Result: " << lines << '\n';
             return 0;
