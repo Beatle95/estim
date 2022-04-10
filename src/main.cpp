@@ -21,6 +21,12 @@ namespace {
 int main(int argc, char **argv) {
     try {
         Arguments args(argc, argv);
+
+        if (args.is_help()) {
+            std::cout << help_str;
+            return 0;
+        }
+
         if (args.is_file_flag_used()) {
             std::cout << "File: \"" << args.get_path() << "\"\n";
         } else {
