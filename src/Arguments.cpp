@@ -8,6 +8,7 @@ namespace {
     const char *recursive_flag {"-r"};
     const char *path_flag {"-p"};
     const char *help_flag {"-h"};
+    const char *ignore_flag {"-i"};
     const char output_flag_char {'o'};
     const char *arguments_error {"Error in argument: "};
 }
@@ -17,10 +18,11 @@ Arguments::Arguments(int argc, char **argv)
 
     for (int i = 1; i < argc; ++i) {
         if (argv[i][0] == '-') {
-            // output level
-            // argument cannot be 0 length, so this check cannot throw exception
-            if (argv[i][1] == output_flag_char) {
-                if (strlen(argv[i]) != 3) {
+            int arg_len = strlen(argv[i]);
+            if (arg_len > 1 && argv[i][1] == output_flag_char) {
+                // output level
+                // argument cannot be 0 length, so this check cannot throw exception
+                if (arg_len != 3) {
                     std::stringstream ss;
                     ss << arguments_error << "wrong -o flag";
                     throw ss.str();
@@ -42,8 +44,15 @@ Arguments::Arguments(int argc, char **argv)
                     throw ss.str();
                 }
                 output_level_ = static_cast<OutputLevel>(val);
-            }
-            else if (strcmp(argv[i], help_flag) == 0) {
+            } else if (strcmp(argv[i], ignore_flag) == 0) {
+                // path to ignore
+                if (++i >= argc || argv[i][0] == '-') {
+                    std::stringstream ss;
+                    ss << arguments_error << ignore_flag;
+                    throw ss.str();
+                }
+                ignore_list_.push_back(argv[i]);
+            } else if (strcmp(argv[i], help_flag) == 0) {
                 is_help_ = true;
                 return;
 

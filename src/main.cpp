@@ -15,12 +15,14 @@ namespace {
         "\t-r - recursievly check subdirectories\n"
         "\t-f - process specified file\n"
         "\t-o<number> - set output level (default is 1)\n"
+        "\t-i - specify directory or file to ignore while processing (do not accepts '..' in path)\n"
     };
 }
 
 int main(int argc, char **argv) {
     try {
         Arguments args(argc, argv);
+        std::filesystem::current_path(args.get_path());
 
         if (args.is_help()) {
             std::cout << help_str;
@@ -67,6 +69,7 @@ int main(int argc, char **argv) {
             dp.set_recursive(args.is_recusive());
             dp.set_extensions(args.get_extensions());
             dp.set_output(args.get_output_level());
+            dp.set_ignore_list(args.get_ignore_list());
             const auto result = dp.process();
             std::cout << "Result: " << result << '\n';
             return 0;

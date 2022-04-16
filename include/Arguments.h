@@ -14,10 +14,12 @@ public:
     OutputLevel get_output_level() const { return output_level_; }
     const std::string& get_path() const { return work_path_; }
     const std::list<std::string>& get_extensions() const { return exts_; }
+    const std::list<std::string>& get_ignore_list() const { return ignore_list_; }
 
 private:
     OutputLevel output_level_ {OutputLevel::ErrorsOnly};
     std::list<std::string> exts_;
+    std::list<std::string> ignore_list_;
     bool is_recursive_ {false};
     bool is_help_ {false};
     std::string work_path_;

@@ -8,6 +8,27 @@
 using namespace estim;
 namespace fs = std::filesystem;
 
+namespace {
+    bool is_path_contains(const fs::path& base_path, const fs::path& check_path) {
+        fs::path::iterator base_it = --base_path.end();
+        fs::path::iterator check_it = --check_path.end();
+        while (true) {
+            if (*check_it != *base_it) {
+                return false;
+            }
+            if (check_it == check_path.begin()) {
+                return true;
+            }
+            if (base_it == base_path.begin()) {
+                break;
+            }
+            --check_it;
+            --base_it;
+        }
+        return false;
+    }
+}
+
 void DirProcessor::set_extensions(const std::list<std::string>& exts) {
     extenstions_.reserve(exts.size());
     for (const auto& ext : exts) {
@@ -27,6 +48,10 @@ size_t DirProcessor::process() {
         dirs.pop();
 
         for (const auto& entry : fs::directory_iterator(current_dir)) {
+            if (!ignored_.empty() && is_ignored(entry.path())) {
+                continue;
+            }
+
             if (entry.is_directory()) {
                 if (recursive_) {
                     dirs.push(entry.path());
@@ -66,4 +91,27 @@ size_t DirProcessor::process() {
         }
     }
     return result;
+}
+
+void DirProcessor::set_ignore_list(const std::list<std::string>& ignore) {
+    ignored_.reserve(ignore.size());
+    for (const auto& item : ignore) {
+        if (item.empty()) {
+            continue;
+        }
+        if (item[0] == '.') {
+            ignored_.push_back(fs::canonical(item));
+        } else {
+            ignored_.push_back(item);
+        }
+    }
+}
+
+bool DirProcessor::is_ignored(const std::filesystem::path& path) {
+    for (const auto& item : ignored_) {
+        if (is_path_contains(path, item)) {
+            return true;
+        }
+    }
+    return false;
 }
