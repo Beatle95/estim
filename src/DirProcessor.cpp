@@ -74,7 +74,7 @@ size_t DirProcessor::process() {
                 }
             } else {
                 // this is file
-                if (extenstions_.find(entry.path().extension()) == extenstions_.end()
+                if (extenstions_.find(entry.path().extension().string()) == extenstions_.end()
                     || is_ignored(entry.path())) {
 
                     if (output_lvl_ >= OutputLevel::Max) {
