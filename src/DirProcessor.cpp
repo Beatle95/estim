@@ -1,46 +1,62 @@
 #include "DirProcessor.h"
 #include <algorithm>
+#include <cctype>
 #include <stack>
 #include <iostream>
 #include "Functions.h"
 #include "Types.h"
 
-using namespace estim;
 namespace fs = std::filesystem;
 
-namespace {
-    bool is_path_contains(const fs::path& base_path, const fs::path& check_path) {
-        fs::path::iterator base_it = --base_path.end();
-        fs::path::iterator check_it = --check_path.end();
-        while (true) {
-            if (*check_it != *base_it) {
-                return false;
-            }
-            if (check_it == check_path.begin()) {
-                return true;
-            }
-            if (base_it == base_path.begin()) {
-                break;
-            }
-            --check_it;
-            --base_it;
+namespace estim {
+
+bool is_path_contains(const fs::path& base_path, const fs::path& check_path) {
+    fs::path::iterator base_it = --base_path.end();
+    fs::path::iterator check_it = --check_path.end();
+
+    // check_path was entered by user in the cli arguments, so there can be '/' at the end
+    if (check_it->empty())
+        --check_it;
+    while (true) {
+        if (*check_it != *base_it) {
+            return false;
         }
-        return false;
+        if (check_it == check_path.begin()) {
+            return true;
+        }
+        if (base_it == base_path.begin()) {
+            break;
+        }
+        --check_it;
+        --base_it;
     }
+    return false;
 }
 
-void DirProcessor::set_extensions(const std::list<std::string>& exts) {
-    extenstions_.reserve(exts.size());
-    for (const auto& ext : exts) {
-        extenstions_.push_back(std::string(".") + ext);
+DirProcessor::DirProcessor(const std::filesystem::path& path) 
+    : main_path_(path) {
+}
+
+void DirProcessor::print_info() const {
+    std::cout << "Directory: " << main_path_ << "\n";
+    std::cout << "Extensions: ";
+    bool first {true};
+    for (const auto& ext : extenstions_) {
+        if (!first) {
+            std::cout << ", ";
+        }
+        std::cout << ext;
+        first = false;
     }
+    std::cout << "\n\n";
 }
 
 size_t DirProcessor::process() {
+    print_info();
+
     size_t result = 0;
     // I want to avoid recursion
     std::stack<fs::path> dirs;
-    std::list<std::string> skipped_list;
     dirs.push(main_path_);
 
     while (!dirs.empty()) {
@@ -58,9 +74,11 @@ size_t DirProcessor::process() {
                 }
             } else {
                 // this is file
-                if (std::find(extenstions_.begin(), extenstions_.end(), entry.path().extension()) == extenstions_.end()) {
+                if (extenstions_.find(entry.path().extension()) == extenstions_.end()
+                    || is_ignored(entry.path())) {
+
                     if (output_lvl_ >= OutputLevel::Max) {
-                        skipped_list.push_back(entry.path());
+                        std::cout << "Skipped: " << entry.path() << "\n";
                     }
                     continue;
                 }
@@ -84,34 +102,40 @@ size_t DirProcessor::process() {
             }
         }
     }
-
-    if (output_lvl_ >= OutputLevel::Max) {
-        for (const auto& p : skipped_list) {
-            std::cout << "Skipped: \"" << p << "\"\n";
-        }
-    }
     return result;
 }
 
+void DirProcessor::set_extensions(const std::list<std::string>& exts) {
+    for (const auto& ext : exts) {
+        extenstions_.insert(std::string(".") + ext);
+    }
+}
+
 void DirProcessor::set_ignore_list(const std::list<std::string>& ignore) {
-    ignored_.reserve(ignore.size());
     for (const auto& item : ignore) {
-        if (item.empty()) {
+        const fs::path p {item};
+        if (p.empty())
             continue;
-        }
-        if (item[0] == '.') {
-            ignored_.push_back(fs::canonical(item));
+            
+        if (p.is_absolute() || *(p.begin()) == "." || *(p.begin()) == "..") {
+            ignored_.insert(fs::weakly_canonical(p));
         } else {
-            ignored_.push_back(item);
+            ignored_.insert(p);
         }
     }
 }
 
 bool DirProcessor::is_ignored(const std::filesystem::path& path) {
     for (const auto& item : ignored_) {
-        if (is_path_contains(path, item)) {
-            return true;
+        if (item.is_absolute()) {
+            if (fs::equivalent(item, path))
+                return true;
+        } else {
+            if (is_path_contains(path, item))
+                return true;
         }
     }
     return false;
 }
+
+} // namespace estim
