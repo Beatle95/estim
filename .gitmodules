@@ -1,3 +1,0 @@
-[submodule "contrib/argh"]
-	path = contrib/argh
-	url = https://github.com/adishavit/argh.git
