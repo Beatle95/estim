@@ -1,0 +1,3 @@
+[submodule "contrib/argh"]
+	path = contrib/argh
+	url = https://github.com/Beatle95/argh_multi_param.git
